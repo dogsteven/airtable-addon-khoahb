@@ -116,3 +116,6 @@ dist
 
 # Local History for Visual Studio Code
 .history/
+
+/.airtableblocksrc.json
+/build
