@@ -1,69 +1,165 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    Box, Button, Input, Text,
+    Box, Button, Dialog, FormField, Heading, Input, Loader, Text,
+    TextButton,
     useGlobalConfig
 } from "@airtable/blocks/ui";
-import { RouteProperties } from "./app_view";
 import CassoService from "../services/casso_service";
+import appConfig from "../config"
+import TextMask from "../utilities/text_mask";
+import { useCallback } from "react";
+import { useRef } from "react";
+import { RouteProperties } from "./app_view";
 
-const ApiKeyInputView: React.FC<RouteProperties> = ({ setRoute, setNotificationContent, toggleNotification }) => {
+const ApiKeyInputView: React.FC<RouteProperties> = ({ setRoute }) => {
     const casso = new CassoService();
     const globalConfig = useGlobalConfig();
+    const isMounted = useRef(true)
 
-    const [apiKey, setApiKey] = useState((globalConfig.get('apiKey')  ?? "") as string);
+    const [apiKey, setApiKey] = useState((globalConfig.get('apiKey')  ?? "") as string)
+
+    const [isShowDialog, setIsShowDialog] = useState<boolean>(false)
+    const [isSigningIn, setIsSigningIn] = useState<boolean>(false)
+
+    useEffect(() => {
+        return () => {
+          isMounted.current = false
+        }
+    }, [])
+
+    const signIn = useCallback(async () => {
+        if (isMounted.current) {
+            setIsSigningIn(true)
+        }
+        try {
+            const response = await casso.getToken(apiKey);
+            globalConfig.setAsync('accessToken', response.access_token)
+            globalConfig.setAsync('refreshToken', response.refresh_token)
+            globalConfig.setAsync('expiresIn', Date.now() + parseInt(response.expires_in) * 1000)
+            globalConfig.setAsync('apiKey', apiKey)
+            const userInfo = await casso.getUserInfo(response.access_token)
+            if (userInfo != null) {
+                await globalConfig.setAsync('user', userInfo)
+                if (isMounted.current) {
+                    setIsSigningIn(false)
+                    setRoute('/main-view')
+                }
+            } 
+        } catch (error) {
+            if (isMounted.current) {
+                setIsShowDialog(true)
+            }
+        }
+        if (isMounted.current) {
+            setIsSigningIn(false)
+        }
+    }, [apiKey])
 
     return (
-        <React.Fragment>
-            <Box
-                marginBottom="8px"
+        <Box
+            paddingLeft="24px"
+            paddingRight="24px"
+            paddingTop="36px"
+            paddingBottom="36px"
+            margin="8px"
+            justifyItems="center"
+            display="flex"
+            flexDirection="column"
+            alignSelf="center"
+            justifySelf="center"
+            width="320px"
+        >
+            <Heading
+                size="xxlarge"
+                fontWeight="600"
+                letterSpacing="1px"
+                fontFamily="Nunito Sans"
+                alignSelf="center"
+                marginBottom="52px"
             >
-                <Text
-                    fontWeight="bold"
-                    fontSize="larger"
+                <TextMask>
+                    BankSheet
+                </TextMask>
+            </Heading>
+
+            <Text
+                fontFamily="Nunito Sans"
+                fontSize="14px"
+            >
+                Vui lòng nhập <span
+                    style={{
+                        color: appConfig.colors.first
+                    }}
                 >
-                    Welcome to Casso Addon!
-                </Text>
-            </Box>
+                    API Key
+                </span> liên kết với <TextMask>
+                    <span style={{fontWeight: 600}}>Casso</span>
+                </TextMask>
+            </Text>
+
             <Input
+                marginTop="8px"
+                type="password"
                 value={apiKey}
                 onChange={(event) => {
-                    const value = event.target.value;
-                    setApiKey(value);
+                    setApiKey(event.target.value)
                 }}
-                marginBottom="8px"
-                placeholder="Enter api key here"
+                 
             />
+
             <Button
-                disabled={apiKey == ''}
-                onClick={async () => {
-                    const response = await casso.getToken(apiKey);
-                    if (response != null) {
-                        globalConfig.setAsync('accessToken', response.access_token);
-                        globalConfig.setAsync('refreshToken', response.refresh_token);
-                        globalConfig.setAsync('expiresIn', Date.now() + parseInt(response.expires_in) * 1000);
-                        globalConfig.setAsync('apiKey', apiKey);
-                        const userInfo = await casso.getUserInfo(response.access_token);
-                        if (userInfo.data != null) {
-                            globalConfig.setAsync('user', userInfo.data);
-                        }
-                        setRoute('/main-view');
-                    } else {
-                        setNotificationContent(
-                            <Box>
-                                Wrong api key! Please try again!
-                            </Box>
-                        );
-                        toggleNotification();
-                    }
-                }}
+                marginTop="8px"
+                disabled={apiKey == '' || isSigningIn}
+                onClick={signIn}
                 style={{
-                    backgroundColor: "green",
+                    backgroundColor: appConfig.colors.first,
                     color: "white"
                 }}
             >
-                Get access token
+                {isSigningIn ? 
+                    (
+                        <Loader fillColor="white" alignSelf="center" justifySelf="center" marginTop="6px" />
+                    ) 
+                    : 
+                    <Text 
+                        textColor="white"
+                        fontFamily="Nunito Sans"
+                        fontWeight="400"
+                        fontSize="15px"
+                    >
+                        Thiết lập API Key
+                    </Text>
+                }
             </Button>
-        </React.Fragment>
+
+            <Text
+                marginTop="40px"
+                fontFamily="Nunito Sans"
+                fontSize="14px"
+                fontWeight="600"
+                alignSelf="center"
+            >
+                <a
+                    target="_blank"
+                    href="https://developer.casso.vn/auth-code/tao-authorization-code-thu-cong"
+                    style={{
+                        textDecoration: "none",
+                        color: appConfig.colors.first
+                    }}
+                >
+                    Hướng dẫn lấy API Key
+                </a>
+            </Text>
+            {isShowDialog && <Dialog
+                onClose={() => { setIsShowDialog(false) }}
+            >
+                <Text
+                    fontFamily="Nunito Sans"
+                >
+                    Sai API Key, vui lòng nhập lại!
+                </Text>
+            </Dialog>}
+        </Box>
     );
 }
 

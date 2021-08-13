@@ -6,7 +6,7 @@ var ReactDOMServer = require('react-dom/server');
 window['_airtableReact'] = React;
 window['_airtableReactDOM'] = ReactDOM;
 window['_airtableReactDOMServer'] = ReactDOMServer;
-window['_airtableBlockCodeVersion'] = '3740a96cf0e147634a476b1b95ac6a1d967ea7a3';
+window['_airtableBlockCodeVersion'] = 'cd31ca9aa1d1b64b6f07b2da057532d8316f4d4b';
 var didRun = false;
 window['_airtableRunBlock'] = function runBlock() {
     if (didRun) {
