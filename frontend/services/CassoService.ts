@@ -1,8 +1,8 @@
 import { GlobalConfigObject, GlobalConfigValue } from "@airtable/blocks/dist/types/src/types/global_config";
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import appConfig from '../config';
-import { toTwoDigits, parseDateString } from "../utilities/date_utilities";
-import URI from "../utilities/uri_builder";
+import { toTwoDigits } from "../utilities/DateUtilities";
+import URI from "../utilities/UriBuilder";
 
 export interface CassoResponse<T extends GlobalConfigObject> {
     error: number,
@@ -62,9 +62,24 @@ export interface TransactionsPageData<Time extends GlobalConfigValue> extends Gl
     records: TransactionData<Time>[]
 }
 
+export function TransactionSorter(left: TransactionData<number>, right: TransactionData<number>): number {
+    if (left.when < right.when) {
+        return 1
+    } else if (left.when == right.when) {
+        return 0
+    } else {
+        return -1
+    }
+}
 
 
 export default class CassoServices {
+    host: string
+
+    constructor(mode: "dev" | "live" = "live") {
+        this.host = appConfig.api[mode]
+    }
+
     public async getToken(apiKey: string): Promise<AccessTokenSuccess> {
         const config: AxiosRequestConfig = {
             headers: {
@@ -74,7 +89,7 @@ export default class CassoServices {
         const data = {
             "code": apiKey
         }
-        const response = await axios.post<AccessTokenSuccess | CassoResponse<null>>(`${appConfig.api.live}/v1/token`, data, config)
+        const response = await axios.post<AccessTokenSuccess | CassoResponse<null>>(`${this.host}/v1/token`, data, config)
         if ('access_token' in response.data) {
             return response.data
         } {
@@ -88,7 +103,7 @@ export default class CassoServices {
                 "Authorization": accessToken
             }
         }
-        const response = await axios.get<CassoResponse<UserInfoData>>(`${appConfig.api.live}/v1/userInfo`, config)
+        const response = await axios.get<CassoResponse<UserInfoData>>(`${this.host}/v1/userInfo`, config)
         return response.data.data
     }
 
@@ -101,7 +116,7 @@ export default class CassoServices {
 
         const dateString = fromDate != null ? `${fromDate.year}-${toTwoDigits(fromDate.month)}-${toTwoDigits(fromDate.day)}` : null
 
-        const uri = URI().withPath(`${appConfig.api.live}/v1/transactions`).withQuery('fromDate', dateString).withQuery('page', page).withQuery('pageSize', pageSize).absolute
+        const uri = URI().withPath(`${this.host}/v1/transactions`).withQuery('fromDate', dateString).withQuery('page', page).withQuery('pageSize', pageSize).absolute
 
         const response = await axios.get<CassoResponse<TransactionsPageData<string>>>(uri, config)
 
@@ -113,7 +128,7 @@ export default class CassoServices {
                 amount: record.amount,
                 bankSubAccId: record.bankSubAccId,
                 cusumBalance: record.cusumBalance,
-                when: parseDateString(record.when)
+                when: Date.parse(record.when)
             }) as TransactionData<number>)
 
             return {
@@ -135,7 +150,6 @@ export default class CassoServices {
         if (firstResponse != null) {
             const totalPages = firstResponse.totalPages;
             const restResponse = await Promise.all(Array.from({ length: totalPages - 1 }).map((_, index) => this.getTransactions(accessToken, fromDate, index + 2)))
-            console.log(restResponse.map(({records}) => records.length).reduce((x, y) => x + y) + firstResponse.records.length)
             return restResponse.map(({records}) => records).reduce((acc, e) => acc.concat(e), firstResponse.records)
         }
         return null
@@ -152,7 +166,7 @@ export default class CassoServices {
             }
         }
         try {
-            const response = await axios.post<CassoResponse<null>>(`${appConfig.api.live}/v1/sync`, data, config)
+            const response = await axios.post<CassoResponse<null>>(`${this.host}/v1/sync`, data, config)
             return response.data
         } catch (error) {
             return {

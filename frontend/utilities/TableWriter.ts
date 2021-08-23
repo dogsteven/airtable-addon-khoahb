@@ -1,5 +1,5 @@
 import { Field, FieldType, Table, Base } from "@airtable/blocks/models";
-import { TransactionData } from "../services/casso_service";
+import { TransactionData } from "../Services/CassoService";
 
 export default class TableWriter {
     static TransactionFields: { name: string, type: FieldType, options?: { [key: string]: unknown } }[] = [

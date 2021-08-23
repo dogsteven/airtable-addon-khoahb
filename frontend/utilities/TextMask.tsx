@@ -1,4 +1,4 @@
-import React, { Fragment, FC } from "react"
+import React, { FC } from "react"
 import appConfig from "../config"
 
 const TextMask: FC<{degree?: number, first?: string, percent?: number, second?: string }> = ({ degree, first, percent, second, children }) => {
