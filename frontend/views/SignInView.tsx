@@ -9,14 +9,16 @@ import { useRef } from "react"
 import { useEffect } from "react"
 import { useCallback } from "react"
 import CassoServices from "../Services/CassoService"
-import Layout from "antd/lib/layout/layout"
-import { Card, Button, Typography, Input } from "antd"
+import Layout, { Content } from "antd/lib/layout/layout"
+import { Card, Button, Typography, Input, notification, message } from "antd"
 import { LoadingOutlined } from "@ant-design/icons"
+import { useAppDispatch } from "../store/Hook"
+import { AppActions } from "../store/app/Slice"
 
 
 const SignInView: React.FC = () => {
     const isMounted = useRef(true)
-    const casso = new CassoServices()
+    
 
     useEffect(() => {
         return () => {
@@ -26,6 +28,8 @@ const SignInView: React.FC = () => {
 
     const history = useHistory()
     const globalConfig = useGlobalConfig()
+    const dispatch = useAppDispatch()
+    const casso = new CassoServices(globalConfig, "live")
 
     const [apiKey, setApiKey] = useState((globalConfig.get("apiKey") ?? "") as string)
     const [isSending, setIsSending] = useState(false)
@@ -39,24 +43,23 @@ const SignInView: React.FC = () => {
             }
             if (apiKey != "") {
                 try {
-                    const accessTokenResponse = await casso.getToken(apiKey)
-                    const accessToken = accessTokenResponse.access_token
-                    const refreshToken = accessTokenResponse.refresh_token
-                    const expiresIn = parseInt(accessTokenResponse.expires_in)
-                    const userInfo = await casso.getUserInfo(accessToken)
-                    await Promise.all([
-                        globalConfig.setAsync("accessToken", accessToken),
-                        globalConfig.setAsync("refreshToken", refreshToken),
-                        globalConfig.setAsync("expiresIn", Date.now() + expiresIn * 1000),
-                        globalConfig.setAsync("user", userInfo)
-                    ])
+                    await casso.getToken(apiKey, true)
                     if (isMounted.current) {
                         setIsSending(false)
+                        dispatch(AppActions.setTopic("dashboard"))
                         history.replace("/main/dashboard")
                         return
                     }
                 } catch (error) {
-                    console.error(error);
+                    if ('message' in error) {
+                        if (isMounted.current) {
+                            message.error("Sai APi Key")
+                        }
+                    } else {
+                        if (isMounted.current) {
+                            message.error("Lỗi đã xảy ra")
+                        }
+                    }
                     if (isMounted.current) {
                         setIsSending(false)
                     }
@@ -69,7 +72,7 @@ const SignInView: React.FC = () => {
     }, [apiKey, isSending])
 
     return (
-        <Layout
+        <Content
             style={{
                 width: "100%",
                 height: "100%",
@@ -103,7 +106,7 @@ const SignInView: React.FC = () => {
                 }}
             >
                 <Typography.Text>
-                    Nhập API Key liên kết với tài khoản Casso
+                    Nhập API Key liên kết với tài khoản <TextMask>Casso</TextMask>
                 </Typography.Text>   
                 <Input
                     type="password"
@@ -132,7 +135,7 @@ const SignInView: React.FC = () => {
                     Thiết lập API Key
                 </Button>
             </Card>
-        </Layout>
+        </Content>
     )
 }
 

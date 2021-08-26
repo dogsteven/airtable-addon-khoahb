@@ -35,58 +35,56 @@ const SplashView: React.FC = () => {
     }
 
     return (
-        <Layout>
-            <Content
+        <Content
+            style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontFamily: appConfig.fonts.nunito.sans,
+            }}
+        >
+            <Card
                 style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    fontFamily: appConfig.fonts.nunito.sans,
+                    width: "424px",
+                    overflowWrap: "break-word",
+                    whiteSpace: "pre-line",
+                    padding: "16px 32px 16px 32px"
                 }}
             >
-                <Card
+                <Typography.Title
+                    level={3}
                     style={{
-                        width: "424px",
-                        overflowWrap: "break-word",
-                        whiteSpace: "pre-line",
-                        padding: "16px 32px 16px 32px"
+                        textAlign: "center",
+                        marginBottom: "52px"
                     }}
                 >
-                    <Typography.Title
-                        level={3}
-                        style={{
-                            textAlign: "center",
-                            marginBottom: "52px"
-                        }}
-                    >
-                        Chào mừng các bạn đến với ứng dụng <Typography.Text style={{color: blue.primary}}>BankSheet</Typography.Text>
-                    </Typography.Title>
-                    
-                    <Typography.Paragraph
-                        style={{
-                            textAlign: "center",
-                            fontSize: 14,
-                            marginBottom: "28px"
-                        }}
-                    >
-                        Ứng dụng <Typography.Text style={{color: blue.primary}}>BankSheet</Typography.Text> giúp kết nối dữ liệu ngân hàng với sheet của bạn.
-                    </Typography.Paragraph>
+                    Chào mừng các bạn đến với ứng dụng <TextMask>BankSheet</TextMask>
+                </Typography.Title>
+                
+                <Typography.Paragraph
+                    style={{
+                        textAlign: "center",
+                        fontSize: 14,
+                        marginBottom: "28px"
+                    }}
+                >
+                    Ứng dụng <TextMask>BankSheet</TextMask> giúp kết nối dữ liệu ngân hàng với sheet của bạn.
+                </Typography.Paragraph>
 
-                    <Button
-                        type="primary"
-                        style={{
-                            fontSize: 16,
-                            width: "100%"
-                        }}
-                        onClick={navigate}
-                    >
-                        Bắt đầu
-                    </Button>
-                </Card>
-            </Content>
-        </Layout>
+                <Button
+                    type="primary"
+                    style={{
+                        fontSize: 16,
+                        width: "100%"
+                    }}
+                    onClick={navigate}
+                >
+                    Bắt đầu
+                </Button>
+            </Card>
+        </Content>
     )
 }
 

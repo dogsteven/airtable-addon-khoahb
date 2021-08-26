@@ -11,14 +11,16 @@ import useWindowSize from "../utilities/WindowHook"
 import appConfig from '../config'
 import Dashboard from "./component-views/Dashboard"
 import ChartView from "./component-views/Chart"
-import SheetView from "./component-views/Sheet"
 import { useAppDispatch, useAppSelector } from "../store/Hook"
 import { AppActions } from "../Store/app/Slice"
-import { AreaChartOutlined, LayoutFilled, LoadingOutlined, LogoutOutlined, PieChartFilled } from "@ant-design/icons"
+import { AreaChartOutlined, LayoutFilled, LoadingOutlined, LogoutOutlined, PieChartFilled, ProfileFilled, ProfileOutlined, UnorderedListOutlined, UserOutlined } from "@ant-design/icons"
 import Layout, { Content, Header } from "antd/lib/layout/layout"
 import Sider from "antd/lib/layout/Sider"
-import { Affix, Button, Modal, Col, Divider, Menu, Row, Tooltip, Typography } from "antd"
+import { Affix, Button, Modal, Col, Divider, Menu, Row, Tooltip, Typography, Drawer } from "antd"
 import { blue, red } from "@ant-design/colors"
+import TextMask from "../utilities/TextMask"
+import { CassoActions } from "../store/casso/Slice"
+import { UserInfoData } from "../Services/CassoService"
 
 const MainView: React.FC = () => {
     const isMounted = useRef(true)
@@ -49,42 +51,28 @@ const MainView: React.FC = () => {
         ])
         if (isMounted.current) {
             setIsSigningOut(false)
+            dispatch(CassoActions.clear())
             history.replace('/')
         }
     }, [isSigningOut])
+
+    const user = globalConfig.get("user") as UserInfoData
 
     const currentTopic = useAppSelector((state) => state.app.currentTopic)
     const dispatch = useAppDispatch()
     
     const [showSignOutModal, setShowSignOutModal] = useState(false)
 
+    const [showProfileModal, setShowProfileModal] = useState(false)
+
     return (
-        <Layout
-            style={{
-                fontFamily: appConfig.fonts.nunito.sans
-            }}
-        >
+        <>
             <Sider
-                collapsed
                 theme="light"
             >
-                <Typography.Paragraph
-                    style={{
-                        color: blue.primary,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        textAlign: "center",
-                        paddingTop: 8,
-                        paddingBottom: 8,
-                        borderBottom: "1px solid #ededed"
-                    }}
-                >
-                    BankSheet
-                </Typography.Paragraph>
-
                 <Menu 
-                    mode="inline" 
                     theme="light"
+                    mode="vertical"
                     selectedKeys={[currentTopic]}
                 >
                     <Menu.Item 
@@ -110,23 +98,43 @@ const MainView: React.FC = () => {
                         Biểu đồ
                     </Menu.Item>
 
-                    <Menu.Item 
-                        key="logout"
+                    <Menu.SubMenu
+                        key="user"
 
-                        icon={<LogoutOutlined />} 
+                        title="Người dùng"
 
-                        style={{
-                            color: red.primary
-                        }}
-
-                        disabled={isSigningOut}
-
-                        onClick={() => {
-                            setShowSignOutModal(true)
-                        }}
+                        icon={<UserOutlined />}
                     >
-                        Thoát
-                    </Menu.Item>
+                        <Menu.Item 
+                            key="profile"
+
+                            icon={<ProfileOutlined />} 
+
+                            onClick={() => {
+                                setShowProfileModal(true)
+                            }}
+                        >
+                            Thông tin
+                        </Menu.Item>
+
+                        <Menu.Item 
+                            key="logout"
+
+                            icon={<LogoutOutlined />} 
+
+                            style={{
+                                color: red.primary
+                            }}
+
+                            disabled={isSigningOut}
+
+                            onClick={() => {
+                                setShowSignOutModal(true)
+                            }}
+                        >
+                            Thoát
+                        </Menu.Item>
+                    </Menu.SubMenu>
                 </Menu>
             </Sider>
 
@@ -137,6 +145,7 @@ const MainView: React.FC = () => {
             >
                 <Route path="/main/dashboard" component={Dashboard} />
                 <Route path="/main/chart" component={ChartView} />
+
                 <Modal
                     style={{
                         fontFamily: appConfig.fonts.nunito.sans
@@ -170,8 +179,52 @@ const MainView: React.FC = () => {
                 >
                     Bạn có chắc chắn muốn đăng xuất?
                 </Modal>
+
+                <Modal
+                    style={{
+                        fontFamily: appConfig.fonts.nunito.sans
+                    }}
+
+                    title={"Thông tin người dùng"}
+
+                    visible={showProfileModal}
+
+                    onCancel={() => {
+                        setShowProfileModal(false)
+                    }}
+
+                    footer={[
+                        <Button
+                            key="yes"
+                            type="primary"
+                            danger
+                            onClick={() => {
+                                setShowProfileModal(false)
+                            }}
+                        >
+                            Đóng
+                        </Button>
+                    ]}
+                >
+                    <Row>
+                        <Col span={8}>
+                            Email:
+                        </Col>
+                        <Col span={16}>
+                            {user?.user.email ?? ""}
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col span={8}>
+                            Business:
+                        </Col>
+                        <Col span={16}>
+                            {user?.business.name ?? ""}
+                        </Col>
+                    </Row>
+                </Modal>
             </Content>
-        </Layout>
+        </>
     )
 }
 

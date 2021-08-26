@@ -3,15 +3,14 @@ import  CassoServices, { TransactionData, TransactionSorter } from "../../Servic
 import CassoStoreState from "./State";
 
 const initialState: CassoStoreState = {
-    lastDate: 0,
-    transactions: []
+    lastDate: Date.now(),
+    transactions: [],
 }
 
 export const getAllTransactions = createAsyncThunk(
     'casso/getAllTransactions',
-    async ({ accessToken, fromDate }: { accessToken: string, fromDate?: { day: number, month: number, year: number } }, thunkAPI) => {
-        
-        return await (new CassoServices()).getAllTransactions(accessToken, fromDate)
+    async ({ casso, fromDate }: { casso: CassoServices, fromDate?: { day: number, month: number, year: number } }, thunkAPI) => {
+        return await casso.getAllTransactions(fromDate)
     }
 )
 
@@ -19,13 +18,16 @@ export const storeSlice = createSlice({
     name: "casso",
     initialState: initialState,
     reducers: {
-
+        clear: (state) => {
+            state.lastDate = Date.now()
+            state.transactions = []
+        }
     },
     extraReducers: (builder) => {
         builder.addCase(getAllTransactions.fulfilled, (state, action) => {
             const indices = state.transactions.map(({id}) => id)
             const transactions = action.payload.filter(({id}) => indices.includes(id) == false)
-            state.lastDate = transactions.map(({when}) => when).reduce((acc, e) => e > acc ? e : acc, state.lastDate)
+            state.lastDate = transactions.map(({when}) => when).reduce((acc, e) => acc > e ? e : acc, state.lastDate)
             state.transactions = state.transactions.concat(transactions).sort(TransactionSorter)
         })
     }

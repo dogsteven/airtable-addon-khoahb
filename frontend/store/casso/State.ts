@@ -1,6 +1,6 @@
-import { TransactionData } from "../../Services/CassoService"
+import CassoServices, { TransactionData } from "../../Services/CassoService"
 
 export default interface CassoStoreState {
     lastDate: number
-    transactions: TransactionData<number>[]
+    transactions: TransactionData<number>[],
 }
